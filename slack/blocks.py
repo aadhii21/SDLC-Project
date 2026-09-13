@@ -13,7 +13,7 @@ def project_created_block(project_name:str)-> list:
         {
             "type":"section",
             "text":{
-                "type":"mrkdwm",#Tells Slack to interpret the text using Slack Markdown formatting.
+                "type":"mrkdwn",#Tells Slack to interpret the text using Slack Markdown formatting.
                 "text":f"*Project:*'{project_name}'",
             },
         },
@@ -62,7 +62,7 @@ def approval_block(project_name:str)->list:
         {
             "type":"section",
             "text":{
-                "type":"mrkdown",
+                "type":"mrkdwn",
                 "text":(
                     f"⚠️Deployment approval required for"
                     f"*{project_name}*."
@@ -92,9 +92,53 @@ def approval_block(project_name:str)->list:
                     "action_id":"reject_deployment",
                     "value":project_name,
                 }
-                    
-                
+
+
             ]
         }
 
+    ]
+
+
+def design_generation_approval_block(parent_key: str, jira_url: str) -> list:
+    """
+    Create Slack approval buttons for kicking off Figma design generation
+    once the product owner approves the Jira PRD/epic.
+    """
+    return [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": (
+                    f"🎨 Ready to generate the design for <{jira_url}|{parent_key}>?\n"
+                    f"Approve to have the agent create the Figma design and link it back here + on the ticket."
+                ),
+            },
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Approve design generation",
+                    },
+                    "style": "primary",
+                    "action_id": "approve_design_generation",
+                    "value": parent_key,
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Reject",
+                    },
+                    "style": "danger",
+                    "action_id": "reject_design_generation",
+                    "value": parent_key,
+                },
+            ],
+        },
     ]

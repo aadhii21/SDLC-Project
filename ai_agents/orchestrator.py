@@ -1,126 +1,45 @@
-from ai_agents.research_agent_folder.research_agent import run_research_agent
-from ai_agents.design_agent import run_design_agent
-from ai_agents.frontend_agent import run_frontend_agent
-from ai_agents.backend_agent import run_backend_agent
-from ai_agents.testing_agent import run_testing_agent
-from ai_agents.code_review_agent import run_code_review_agent
-from ai_agents.security_agent import run_security_agent
-from ai_agents.devops_agent import run_devops_agent
-from ai_agents.monitoring_agent import run_monitoring_agent
-from ai_agents.full_sdlc_agent import run_full_sdlc_agent
+import asyncio
 
-def run_orchestrator(user_query:str):
-    print("Orchestrator recieved", user_query)
-    query = user_query.lower().strip()
-    if (
-        "full sdlc" in query
-        or "end to end" in query
-        or "complete project" in query
-    ):
+from ai_agents.jira.create_issues import create_jira_from_prd
+from ai_agents.research_agent.search_planer_agent import run_research_agent
+from ai_agents.research_agent.writer_agent import generate_jira_prd
+from ai_agents.state import save_pending_approval
+from config.settings import settings
+from slack.blocks import design_generation_approval_block
 
-        return run_full_sdlc_agent(
-            user_query
-        )
-    elif (
-        "design" in query
-        or "architecture" in query
-        or "database" in query
-        or "db design" in query
-        or "api design" in query
-    ):
 
-        return run_design_agent(
-            user_query
-        )
-    elif (
-        "frontend" in query
-        or "react" in query
-        or "next.js" in query
-        or "nextjs" in query
-        or "ui" in query
-    ):
+async def _run_orchestrator_async(user_query: str) -> dict:
 
-        return run_frontend_agent(
-            user_query
-        )
-    elif (
-        "backend" in query
-        or "fastapi" in query
-        or "api" in query
-    ):
+    print("Orchestrator received", user_query)
 
-        return run_backend_agent(
-            user_query
-        )
-    elif (
-        "test" in query
-        or "testing" in query
-        or "qa" in query
-        or "playwright" in query
-        or "e2e" in query
-        or "integration test" in query
-        or "unit test" in query
-    ):
+    research_context = await run_research_agent(user_query)
 
-        return run_testing_agent(
-            user_query
-        )
-    elif (
-        "review" in query
-        or "code review" in query
-    ):
+    prd = await generate_jira_prd(user_query, research_context)
 
-        return run_code_review_agent(
-            user_query
-        )
-    elif (
-        "security" in query
-        or "quality" in query
-        or "vulnerability" in query
-        or "scan" in query
-    ):
+    jira_result = await create_jira_from_prd(prd, settings.jira_project_key)
 
-        return run_security_agent(
-            user_query
-        )
-    elif (
-        "deploy" in query
-        or "deployment" in query
-        or "devops" in query
-        or "docker" in query
-        or "jenkins" in query
-        or "ci/cd" in query
-        or "cicd" in query
-        or "ecs" in query
-        or "eks" in query
-        or "ecr" in query
-    ):
+    if not jira_result["success"]:
+        return {
+            "text": (
+                f"Failed to create Jira ticket(s) at stage "
+                f"'{jira_result['stage']}': {jira_result['jira_error']}"
+            )
+        }
 
-        return run_devops_agent(
-            user_query
-        )
-    elif (
-        "monitor" in query
-        or "monitoring" in query
-        or "logs" in query
-        or "metrics" in query
-        or "cloudwatch" in query
-    ):
+    parent_key = jira_result["parent"]
 
-        return run_monitoring_agent(
-            user_query
-        )
-    else:
+    save_pending_approval(parent_key, user_query=user_query, prd=prd)
 
-        # For now, if no agent matches,
-        # return a simple response.
-        #
-        # Later:
-        #
-        # replace keyword routing with an LLM
-        # that automatically chooses the correct agent.
+    jira_url = f"{settings.jira_base_url}/browse/{parent_key}"
 
-        return (
-            "I received your request, but I could not "
-            f"identify the required agent: {user_query}"
-        )
+    return {
+        "text": (
+            f"Created Jira Epic <{jira_url}|{parent_key}> with "
+            f"{len(jira_result['children'])} child task(s)."
+        ),
+        "blocks": design_generation_approval_block(parent_key, jira_url),
+    }
+
+
+def run_orchestrator(user_query: str) -> dict:
+    return asyncio.run(_run_orchestrator_async(user_query))

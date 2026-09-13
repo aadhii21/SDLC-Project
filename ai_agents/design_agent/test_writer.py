@@ -1,5 +1,7 @@
 import asyncio
 
+from ai_agents.design_agent.design_agent import generate_design
+
 
 async def main():
 

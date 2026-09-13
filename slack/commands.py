@@ -23,11 +23,14 @@ def register_commands(slack_app:App):
             result=run_orchestrator(
                 user_request
             )
-            respond(result)
+            respond(
+                text=result.get("text", ""),
+                blocks=result.get("blocks"),
+            )
         except Exception as error:
             logger.exception(
                 f"Sdlc command failed{error}"
-                            
+
             )
             respond(
                 "Something went wrong while processing your SDLC request."

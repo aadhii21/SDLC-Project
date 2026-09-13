@@ -5,6 +5,9 @@
 # Local environment file containing API keys and secrets.
 .env
 
+# Figma MCP OAuth tokens (created by scripts/figma_mcp_login.py).
+.figma_mcp_tokens.json
+
 
 # ============================================================
 # Python Virtual Environment

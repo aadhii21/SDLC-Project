@@ -7,5 +7,5 @@ redis_conn=Redis(
 )
 queue=Queue(
     "rag_queue",
-    conn=redis_conn
+    connection=redis_conn
 )

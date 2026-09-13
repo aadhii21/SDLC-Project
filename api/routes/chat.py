@@ -1,10 +1,10 @@
-from fastapi import ApiRouter
+from fastapi import APIRouter
 from pydantic import BaseModel
 from queues.redis_queue import queue,redis_conn
 from rq.job import Job
 from queues.worker import process_query
 
-router=ApiRouter()
+router=APIRouter()
 class ChatRequest(BaseModel):
     query:str
 

@@ -62,16 +62,16 @@ class JiraPRD(BaseModel):
         default_factory=list
     )
     dependencies:List[str]=Field(
-        default_factory=List
+        default_factory=list
     )
     assumptions:List[str]=Field(
-        default_factory=List
+        default_factory=list
     )
     open_questions:List[str]=Field(
-        default_factory=List
+        default_factory=list
     )
     acceptance_criteria:List[str]=Field(
-        default_factory=List
+        default_factory=list
     )
     design_link:Optional[str]=None
     design_required:bool=False

@@ -1,18 +1,14 @@
-import os
 import httpx
 
-JIRA_BASE_URL = os.getenv("JIRA_BASE_URL")
-JIRA_API_TOKEN = os.getenv("JIRA_API_TOKEN")
-JIRA_EMAIL = os.getenv("JIRA_EMAIL")
-JIRA_PROJECT_KEY = os.getenv("JIRA_PROJECT_KEY")
+from config.settings import settings
 
 
 async def jira_post(path: str, payload: dict):
 
-    url = f"{JIRA_BASE_URL}{path}"
+    url = f"{settings.jira_base_url}{path}"
 
     async with httpx.AsyncClient(
-        auth=(JIRA_EMAIL, JIRA_API_TOKEN),
+        auth=(settings.jira_email, settings.jira_api_token),
         headers={
             "Accept": "application/json",
             "Content-Type": "application/json"

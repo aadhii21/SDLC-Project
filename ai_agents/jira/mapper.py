@@ -16,9 +16,8 @@ def text_to_adf(text: str) -> dict:
     }
 
 
-def parent_payload(prd, project_key: str):
-
-    description = f"""
+def prd_description_text(prd) -> str:
+    return f"""
 {prd.description}
 
 Problem Statement:
@@ -39,6 +38,11 @@ Functional Requirements:
 Acceptance Criteria:
 {chr(10).join("- " + x for x in prd.acceptance_criteria)}
 """
+
+
+def parent_payload(prd, project_key: str):
+
+    description = prd_description_text(prd)
 
     return {
         "fields": {

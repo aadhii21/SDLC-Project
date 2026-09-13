@@ -41,7 +41,8 @@ def register_events(slack_app: App):
             # STEP 3:
             # Send dynamic result back to Slack
             say(
-                text=str(result)
+                text=result.get("text", ""),
+                blocks=result.get("blocks"),
             )
 
 

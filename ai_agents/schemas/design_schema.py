@@ -31,3 +31,9 @@ class DesignSpecification(BaseModel):
     assumptions:List[str]=Field(default_factory=list)
     design_dependencies:List[str]=Field(default_factory=list)
     figma_required:bool=True
+
+
+class FigmaGenerationResult(BaseModel):
+    file_key: str
+    file_url: str
+    notes: str = ""
