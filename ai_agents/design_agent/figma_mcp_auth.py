@@ -96,6 +96,7 @@ class _CallbackServer:
                 return  # silence default request logging
 
         server = HTTPServer((REDIRECT_HOST, REDIRECT_PORT), Handler)
+        server.timeout = 120  # bound the wait -- never hang forever on an abandoned login
         server.handle_request()
         server.server_close()
 
@@ -118,6 +119,18 @@ async def _callback_handler() -> AuthorizationCodeResult:
         raise RuntimeError("Figma authorization callback did not return a code.")
 
     return callback_server.result
+
+
+def has_stored_tokens() -> bool:
+    """Whether scripts/figma_mcp_login.py has ever been run successfully.
+
+    Callers on a request path that must not block (e.g. a Slack action
+    handler) should check this BEFORE building the OAuth provider / MCP
+    connection -- without it, a missing login silently tries the
+    interactive browser flow and blocks waiting for a redirect that will
+    never arrive in that context.
+    """
+    return Path(settings.figma_token_storage_path).exists()
 
 
 def build_oauth_provider() -> OAuthClientProvider:

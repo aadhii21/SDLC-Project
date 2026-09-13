@@ -1,7 +1,7 @@
 from agents import Agent, Runner
 from agents.mcp import MCPServerStreamableHttp
 
-from ai_agents.design_agent.figma_mcp_auth import build_oauth_provider
+from ai_agents.design_agent.figma_mcp_auth import build_oauth_provider, has_stored_tokens
 from ai_agents.schemas.design_schema import DesignSpecification, FigmaGenerationResult
 from config.settings import settings
 
@@ -83,6 +83,12 @@ Configured Figma plan key: {plan_key_line}
 
 
 async def generate_figma_design(design: DesignSpecification) -> FigmaGenerationResult:
+    if not has_stored_tokens():
+        raise RuntimeError(
+            "No Figma MCP login found. Run "
+            "`./.venv/bin/python scripts/figma_mcp_login.py` once, then try again."
+        )
+
     oauth_provider = build_oauth_provider()
 
     async with MCPServerStreamableHttp(
