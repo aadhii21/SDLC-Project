@@ -1,0 +1,71 @@
+# ============================================================
+# Environment Variables / Secrets
+# ============================================================
+
+# Local environment file containing API keys and secrets.
+.env
+
+
+# ============================================================
+# Python Virtual Environment
+# ============================================================
+
+# Local virtual environment.
+.venv/
+venv/
+env/
+
+
+# ============================================================
+# Python Cache Files
+# ============================================================
+
+# Python bytecode cache.
+__pycache__/
+
+# Compiled Python files.
+*.py[cod]
+
+# Pytest cache.
+.pytest_cache/
+
+
+# ============================================================
+# IDE / Editor Files
+# ============================================================
+
+# VS Code settings.
+.vscode/
+
+# PyCharm settings.
+.idea/
+
+
+# ============================================================
+# Operating System Files
+# ============================================================
+
+# macOS files.
+.DS_Store
+
+# Windows thumbnail cache.
+Thumbs.db
+
+
+# ============================================================
+# Logs
+# ============================================================
+
+# Application log files.
+*.log
+
+
+# ============================================================
+# Generated Projects
+# ============================================================
+
+# Ignore generated applications by default.
+generated_projects/*
+
+# Keep the directory itself in Git.
+!generated_projects/.gitkeep
