@@ -100,10 +100,15 @@ def approval_block(project_name:str)->list:
     ]
 
 
-def design_generation_approval_block(parent_key: str, jira_url: str) -> list:
+def design_generation_approval_block(parent_key: str, jira_url: str, thread_id: str) -> list:
     """
     Create Slack approval buttons for kicking off Figma design generation
     once the product owner approves the Jira PRD/epic.
+
+    `thread_id` is the LangGraph checkpoint thread id for this paused run --
+    it's what the button carries (not `parent_key`), since that's what
+    resume_pipeline() needs to wake the correct paused graph back up.
+    `parent_key`/`jira_url` are only used for the human-readable message text.
     """
     return [
         {
@@ -127,7 +132,7 @@ def design_generation_approval_block(parent_key: str, jira_url: str) -> list:
                     },
                     "style": "primary",
                     "action_id": "approve_design_generation",
-                    "value": parent_key,
+                    "value": thread_id,
                 },
                 {
                     "type": "button",
@@ -137,7 +142,7 @@ def design_generation_approval_block(parent_key: str, jira_url: str) -> list:
                     },
                     "style": "danger",
                     "action_id": "reject_design_generation",
-                    "value": parent_key,
+                    "value": thread_id,
                 },
             ],
         },
