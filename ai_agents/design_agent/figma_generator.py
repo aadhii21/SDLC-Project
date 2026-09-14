@@ -64,11 +64,23 @@ the specification calls for them. Include loading, empty, validation and
 error states where the specification lists them. Do not alter business
 requirements. Never fabricate a Figma URL -- it must come from create_new_file.
 
+IF TOOL CALLS FAIL (e.g. rate limit / quota errors on use_figma)
+
+create_new_file is exempt from Figma's rate limits, but use_figma is NOT --
+so it is possible to successfully create an empty file and then have every
+use_figma call blocked by quota. This is a real failure, not a success.
+- Do NOT report success just because a file exists.
+- List in built_screens ONLY the screen names you actually finished building
+  (confirmed via get_metadata or a screenshot) -- leave it empty if none were.
+- If built_screens is empty, or you could not complete the screens the
+  design specification called for, set success to false and explain exactly
+  what blocked you (quota, error message, etc.) in notes.
+
 FINAL OUTPUT
 
 End your response with exactly one JSON object on its own line, in this
 shape, and nothing else after it:
-{"file_key": "<file_key from create_new_file>", "file_url": "https://www.figma.com/design/<file_key>", "notes": "<one sentence summary of what was built>"}
+{"file_key": "<file_key from create_new_file>", "file_url": "https://www.figma.com/design/<file_key>", "success": true/false, "built_screens": ["<screen names actually built>"], "notes": "<what was built, or exactly what blocked you>"}
 """
 
 
@@ -137,4 +149,9 @@ async def generate_figma_design(design: DesignSpecification) -> FigmaGenerationR
     if payload.get("is_error") or payload.get("subtype") != "success":
         raise RuntimeError(f"Figma generation did not complete successfully: {payload.get('result')}")
 
-    return _extract_result(payload.get("result", ""))
+    result = _extract_result(payload.get("result", ""))
+
+    if not result.success:
+        raise RuntimeError(f"Figma generation reported failure: {result.notes}")
+
+    return result

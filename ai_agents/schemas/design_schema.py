@@ -36,4 +36,6 @@ class DesignSpecification(BaseModel):
 class FigmaGenerationResult(BaseModel):
     file_key: str
     file_url: str
+    success: bool = True
+    built_screens: List[str] = Field(default_factory=list)
     notes: str = ""
