@@ -12,9 +12,7 @@ def register_actions(slack_app: App) -> None:
         ack()
         thread_id = body["actions"][0]["value"]
         try:
-            asyncio.run(resume_pipeline(thread_id, approved=True))
-            # figma_node / post_back_node / report_error_node all post
-            # their own Slack messages -- nothing further needed here.
+            asyncio.run(resume_pipeline(thread_id, {"approved": True}))
         except Exception as error:
             logger.exception(f"Resume (approve) failed for thread {thread_id}: {error}")
 
@@ -23,6 +21,24 @@ def register_actions(slack_app: App) -> None:
         ack()
         thread_id = body["actions"][0]["value"]
         try:
-            asyncio.run(resume_pipeline(thread_id, approved=False))
+            asyncio.run(resume_pipeline(thread_id, {"approved": False}))
         except Exception as error:
             logger.exception(f"Resume (reject) failed for thread {thread_id}: {error}")
+
+    @slack_app.action("regenerate_prd")
+    def handle_regenerate_prd(ack, body, logger):
+        ack()
+        thread_id = body["actions"][0]["value"]
+        try:
+            asyncio.run(resume_pipeline(thread_id, {"type": "choice", "target": "prd"}))
+        except Exception as error:
+            logger.exception(f"Resume (regenerate_prd) failed for thread {thread_id}: {error}")
+
+    @slack_app.action("regenerate_design")
+    def handle_regenerate_design(ack, body, logger):
+        ack()
+        thread_id = body["actions"][0]["value"]
+        try:
+            asyncio.run(resume_pipeline(thread_id, {"type": "choice", "target": "design"}))
+        except Exception as error:
+            logger.exception(f"Resume (regenerate_design) failed for thread {thread_id}: {error}")

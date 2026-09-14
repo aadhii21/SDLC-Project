@@ -147,3 +147,39 @@ def design_generation_approval_block(parent_key: str, jira_url: str, thread_id: 
             ],
         },
     ]
+
+
+def regeneration_choice_block(thread_id: str) -> list:
+    """
+    Buttons letting the reviewer pick what to regenerate after rejecting a
+    design -- requirement-level feedback should regenerate the PRD (and
+    update the Jira epic), visual/layout feedback should just regenerate
+    the design. `thread_id` is the LangGraph checkpoint thread id (the
+    Slack root message ts).
+    """
+    return [
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Regenerate PRD",
+                    },
+                    "style": "primary",
+                    "action_id": "regenerate_prd",
+                    "value": thread_id,
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Regenerate Design",
+                    },
+                    "action_id": "regenerate_design",
+                    "value": thread_id,
+                },
+            ],
+        },
+    ]

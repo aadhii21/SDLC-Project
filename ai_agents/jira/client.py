@@ -9,7 +9,7 @@ MAX_ATTEMPTS = 3
 RETRY_BACKOFF_SECONDS = 1.5
 
 
-async def jira_post(path: str, payload: dict):
+async def _jira_request(method: str, path: str, payload: dict):
 
     url = f"{settings.jira_base_url}{path}"
 
@@ -24,7 +24,7 @@ async def jira_post(path: str, payload: dict):
 
         for attempt in range(1, MAX_ATTEMPTS + 1):
             try:
-                response = await client.post(url, json=payload)
+                response = await client.request(method, url, json=payload)
                 break
             except httpx.TransportError as error:
                 if attempt == MAX_ATTEMPTS:
@@ -40,6 +40,7 @@ async def jira_post(path: str, payload: dict):
                 await asyncio.sleep(RETRY_BACKOFF_SECONDS * attempt)
 
         print("\n========== JIRA DEBUG ==========")
+        print("METHOD:", method)
         print("URL:", url)
         print("STATUS:", response.status_code)
         print("RESPONSE:", response.text)
@@ -53,4 +54,16 @@ async def jira_post(path: str, payload: dict):
                 "response": response.text,
             }
 
+        if not response.text:
+            # Jira's PUT endpoints commonly return 204 No Content on success.
+            return {"error": False, "status": response.status_code}
+
         return response.json()
+
+
+async def jira_post(path: str, payload: dict):
+    return await _jira_request("POST", path, payload)
+
+
+async def jira_put(path: str, payload: dict):
+    return await _jira_request("PUT", path, payload)
