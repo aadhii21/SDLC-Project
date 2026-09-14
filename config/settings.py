@@ -20,10 +20,8 @@ class Settings(BaseSettings):
     jira_email:str=""
     jira_api_token:str=""
     jira_project_key:str=""
-    #FIGMA MCP
-    figma_mcp_url:str="https://mcp.figma.com/mcp"
+    #FIGMA (generation delegated to the `claude` CLI -- see figma_generator.py)
     figma_team_plan_key:str=""
-    figma_token_storage_path:str=".figma_mcp_tokens.json"
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -10,9 +10,9 @@ httpx==0.28.1
 slack_bolt==1.30.0
 slack_sdk==3.44.1
 
-# LLM agents + MCP (Figma)
+# LLM agents (Figma generation is delegated to the `claude` CLI, not called
+# directly from Python -- see ai_agents/design_agent/figma_generator.py)
 openai-agents==0.22.2
-mcp==2.2.0
 
 # RAG / vector store
 langchain-core==1.6.3
