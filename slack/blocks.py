@@ -100,27 +100,14 @@ def approval_block(project_name:str)->list:
     ]
 
 
-def design_generation_approval_block(parent_key: str, jira_url: str, thread_id: str) -> list:
+def prd_approval_block(thread_id: str) -> list:
     """
-    Create Slack approval buttons for kicking off Figma design generation
-    once the product owner approves the Jira PRD/epic.
-
-    `thread_id` is the LangGraph checkpoint thread id for this paused run --
-    it's what the button carries (not `parent_key`), since that's what
-    resume_pipeline() needs to wake the correct paused graph back up.
-    `parent_key`/`jira_url` are only used for the human-readable message text.
+    Approve/Reject buttons shown directly under the printed epic content,
+    before any Jira ticket exists yet. `thread_id` is the LangGraph
+    checkpoint thread id (the Slack root message ts) -- what resume_pipeline()
+    needs to wake the correct paused graph back up.
     """
     return [
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": (
-                    f"🎨 Ready to generate the design for <{jira_url}|{parent_key}>?\n"
-                    f"Approve to have the agent create the Figma design and link it back here + on the ticket."
-                ),
-            },
-        },
         {
             "type": "actions",
             "elements": [
@@ -128,10 +115,10 @@ def design_generation_approval_block(parent_key: str, jira_url: str, thread_id: 
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "Approve design generation",
+                        "text": "Approve Epic",
                     },
                     "style": "primary",
-                    "action_id": "approve_design_generation",
+                    "action_id": "approve_prd",
                     "value": thread_id,
                 },
                 {
@@ -141,7 +128,7 @@ def design_generation_approval_block(parent_key: str, jira_url: str, thread_id: 
                         "text": "Reject",
                     },
                     "style": "danger",
-                    "action_id": "reject_design_generation",
+                    "action_id": "reject_prd",
                     "value": thread_id,
                 },
             ],
@@ -149,13 +136,12 @@ def design_generation_approval_block(parent_key: str, jira_url: str, thread_id: 
     ]
 
 
-def regeneration_choice_block(thread_id: str) -> list:
+def design_approval_block(parent_key: str, jira_url: str, thread_id: str) -> list:
     """
-    Buttons letting the reviewer pick what to regenerate after rejecting a
-    design -- requirement-level feedback should regenerate the PRD (and
-    update the Jira epic), visual/layout feedback should just regenerate
-    the design. `thread_id` is the LangGraph checkpoint thread id (the
-    Slack root message ts).
+    Approve/Reject buttons shown directly under the printed design content,
+    plus read-only View Epic / View Sub Tasks buttons -- the epic already
+    exists by this point. `thread_id` is the LangGraph checkpoint thread id.
+    `parent_key`/`jira_url` are only used by the caller for the message text.
     """
     return [
         {
@@ -165,19 +151,38 @@ def regeneration_choice_block(thread_id: str) -> list:
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "Regenerate PRD",
+                        "text": "Approve Design",
                     },
                     "style": "primary",
-                    "action_id": "regenerate_prd",
+                    "action_id": "approve_design",
                     "value": thread_id,
                 },
                 {
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "Regenerate Design",
+                        "text": "Reject",
                     },
-                    "action_id": "regenerate_design",
+                    "style": "danger",
+                    "action_id": "reject_design",
+                    "value": thread_id,
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "View Epic",
+                    },
+                    "action_id": "view_epic",
+                    "value": thread_id,
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "View Sub Tasks",
+                    },
+                    "action_id": "view_subtasks",
                     "value": thread_id,
                 },
             ],

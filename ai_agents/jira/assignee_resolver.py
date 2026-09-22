@@ -1,10 +1,14 @@
-Work_TYPE_OWNERS={
-    "design":"712020:e1acb009-abf7-4532-96ca-9da21a0d89d7",
-    "frontend":"712020:e1acb009-abf7-4532-96ca-9da21a0d89d7",
-    "backend":"712020:e1acb009-abf7-4532-96ca-9da21a0d89d7",
-    "integeration":"712020:e1acb009-abf7-4532-96ca-9da21a0d89d7",
-    "qa":"712020:e1acb009-abf7-4532-96ca-9da21a0d89d7",
-    "devops":"712020:e1acb009-abf7-4532-96ca-9da21a0d89d7"
+from config.settings import settings
+
+WORK_TYPE_OWNERS = {
+    "design": settings.jira_assignee_design,
+    "frontend": settings.jira_assignee_frontend,
+    "backend": settings.jira_assignee_backend,
+    "integration": settings.jira_assignee_integration,
+    "qa": settings.jira_assignee_qa,
+    "devops": settings.jira_assignee_devops,
 }
-def resolve_assignee(work_type:str):
-    return Work_TYPE_OWNERS.get(work_type)
+
+
+def resolve_assignee(work_type: str):
+    return WORK_TYPE_OWNERS.get(work_type)

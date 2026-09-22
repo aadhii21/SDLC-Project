@@ -1,5 +1,6 @@
 from agents import Agent,Runner
 from rag.retrieval import retrieve_documents
+from ai_agents.gemini_model import get_gemini_model
 from ai_agents.schemas.design_schema import DesignSpecification
 
 
@@ -72,22 +73,50 @@ If no design exists:
 - set figma_required to true.
 
 Never fabricate design links.
+
+
+REVISION MODE
+
+If a PREVIOUS DESIGN and REQUESTED CHANGES are given below, that design is
+the exact version already delivered to the reviewer. Change ONLY the
+specific screen(s)/component(s)/property the requested changes call out
+(e.g. colors, layout, button placement). Every other screen and
+component must be carried through unchanged, verbatim, in the same
+order -- do not rephrase, reorder, "clean up", or otherwise touch
+anything the reviewer did not ask you to change. Do not regenerate the
+design from scratch.
 """
 
 design_agent=Agent(
     name="Design Agent",
     instructions=DESIGN_AGENT_INSTRUCTIONS,
+    model=get_gemini_model(),
     output_type=DesignSpecification
 )
 async def generate_design(
-        prd:str
-)-> DesignSpecification:
+        prd: str,
+        previous_design: DesignSpecification | None = None,
+        feedback: list[str] | None = None,
+) -> DesignSpecification:
     design_context = retrieve_documents(prd)
+
+    revision_block = ""
+    if previous_design is not None and feedback:
+        revision_block = f"""
+PREVIOUS DESIGN (already delivered to the reviewer -- revise this, don't
+start over):
+{previous_design.model_dump_json()}
+
+REQUESTED CHANGES FROM THE REVIEWER:
+{chr(10).join("- " + item for item in feedback)}
+"""
+
     prompt=f"""
 PRODUCT REQUIREMENT
 {prd}
 ORGANIZATION DESIGN STANDARDS
 {design_context}
+{revision_block}
 Generate a complete implementation-ready UI/UX design specification.
 
 Follow the organization design knowledge whenever relevant.
@@ -98,6 +127,4 @@ Do not invent a Figma URL.
         prompt
     )
     return result.final_output
-
-    #print(result.final_output)
 

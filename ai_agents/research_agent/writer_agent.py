@@ -1,5 +1,5 @@
-from agents import Agent,Runner
-from rag.retrieval import retrieve_documents
+from agents import Agent, Runner
+from ai_agents.gemini_model import get_gemini_model
 from ai_agents.schemas.prd_schema import JiraPRD
 from pathlib import Path
 from dotenv import load_dotenv
@@ -17,10 +17,6 @@ if not openai_api_key:
         f"OPENAI_API_KEY not found. Expected .env at: {ENV_PATH}"
     )
 
-print("OPENAI_API_KEY loaded:", bool(openai_api_key))
-
-from agents import Agent, Runner
-from ai_agents.schemas.prd_schema import JiraPRD
 #writer agent
 INSTRUCTIONS = """
 You are a Senior Product Manager and Product Researcher.
@@ -118,6 +114,41 @@ If information is not known:
 - add it to open_questions when human clarification is required
 
 
+FIDELITY TO SOURCE CONTENT
+
+The user's original request may already contain exact, specific content --
+consent/legal text, question wording, dropdown option lists, reason-to-
+document mapping tables, field labels, numbered step-by-step logic, date
+formats, an existing design/Figma URL. Treat carrying that content into
+the matching PRD field as a TRANSCRIPTION task, not a rewriting task:
+
+- Do not paraphrase, summarize, reorder, or compress exact wording,
+  option lists, or mapping tables the user already gave you -- copy them
+  through verbatim.
+- Preserve numbered step-by-step logic in the same order and wording,
+  one step per business_rules/functional_requirements item, rather than
+  merging steps together or restating them in your own words.
+- If the original request contains a Figma/design URL, set design_link to
+  that exact URL and design_required to false.
+- Never drop information present in the user's original request -- if it
+  doesn't fit one specific field, put it in the closest relevant field
+  (or assumptions/open_questions) rather than omitting it.
+
+When the user instead gives a loose, informal, or incomplete request,
+use your own judgment as a Senior Product Manager as usual.
+
+
+REVISION MODE
+
+If a PREVIOUS DRAFT and REQUESTED CHANGES are given below, that draft is
+the exact version already delivered to the reviewer. Change ONLY the
+specific fields/content the requested changes call out. Every other
+field must be carried through unchanged, verbatim, in the same order --
+do not rephrase, reorder, "clean up", or otherwise touch anything the
+reviewer did not ask you to change. Do not regenerate the PRD from
+scratch.
+
+
 OUTPUT
 
 Return only structured Jira PRD information matching the provided
@@ -128,24 +159,38 @@ Do not return Markdown outside the structured result.
 writer_agent=Agent(
     name="JIRA PRD Writter Agent",
     instructions=INSTRUCTIONS,
-    model="gpt-5.6",
+    model=get_gemini_model(),
     output_type=JiraPRD,
 )
 
 async def generate_jira_prd(
-        user_request:str,
-        research_context:str,
-)->JiraPRD:
-    input_text=f"""
+        user_request: str,
+        research_context: str,
+        previous_prd: JiraPRD | None = None,
+        feedback: list[str] | None = None,
+) -> JiraPRD:
+    revision_block = ""
+    if previous_prd is not None and feedback:
+        revision_block = f"""
+PREVIOUS DRAFT (already delivered to the reviewer -- revise this, don't
+start over):
+{previous_prd.model_dump_json()}
+
+REQUESTED CHANGES FROM THE REVIEWER:
+{chr(10).join("- " + item for item in feedback)}
+"""
+
+    input_text = f"""
 ORIGINAL USER REQUEST:
 
 {user_request}
 
 RESERCH FINDINGS:
 {research_context}
+{revision_block}
 Generate the implementation ready Jira PRD
 """
-    result=await Runner.run(
+    result = await Runner.run(
         writer_agent,
         input=input_text,
     )

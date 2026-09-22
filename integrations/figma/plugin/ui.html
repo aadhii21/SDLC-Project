@@ -1,0 +1,57 @@
+<style>
+  body { font: 12px -apple-system, sans-serif; margin: 0; padding: 12px; color: #1a1a1a; }
+  label { display: block; font-weight: 600; margin-top: 10px; margin-bottom: 4px; }
+  input { width: 100%; box-sizing: border-box; padding: 6px; font: 12px monospace; border: 1px solid #ccc; border-radius: 4px; }
+  .row { display: flex; gap: 8px; margin-top: 12px; }
+  button { flex: 1; padding: 8px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
+  #start { background: #18a0fb; color: white; }
+  #stop { background: #eee; color: #333; }
+  #log { margin-top: 12px; height: 220px; overflow-y: auto; background: #f7f7f7; border-radius: 4px; padding: 8px; font: 11px monospace; white-space: pre-wrap; }
+  .hint { color: #888; font-size: 10px; margin-top: 2px; }
+</style>
+
+<label for="baseUrl">Figma Job Service URL</label>
+<input id="baseUrl" value="http://127.0.0.1:8787" />
+
+<label for="token">X-Plugin-Token</label>
+<input id="token" type="password" placeholder="value of FIGMA_PLUGIN_API_TOKEN" />
+<div class="hint">Never hardcoded -- must match the backend's .env value. Not persisted anywhere.</div>
+
+<div class="row">
+  <button id="start">Start polling</button>
+  <button id="stop">Stop</button>
+</div>
+
+<div id="log"></div>
+
+<script>
+  const logEl = document.getElementById("log");
+  function appendLog(text) {
+    const line = document.createElement("div");
+    line.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  document.getElementById("start").onclick = () => {
+    const baseUrl = document.getElementById("baseUrl").value.trim();
+    const token = document.getElementById("token").value;
+    if (!token) {
+      appendLog("Enter the plugin token before starting.");
+      return;
+    }
+    parent.postMessage({ pluginMessage: { type: "start", baseUrl, token, intervalMs: 3000 } }, "*");
+    appendLog(`Polling ${baseUrl} every 3s...`);
+  };
+
+  document.getElementById("stop").onclick = () => {
+    parent.postMessage({ pluginMessage: { type: "stop" } }, "*");
+    appendLog("Stop requested.");
+  };
+
+  window.onmessage = (event) => {
+    const msg = event.data.pluginMessage;
+    if (!msg) return;
+    if (msg.type === "log") appendLog(msg.text);
+  };
+</script>

@@ -1,17 +1,17 @@
-# Web / API
-fastapi==0.141.1
-uvicorn==0.52.4
 pydantic==2.13.5
 pydantic-settings==2.15.0
 python-dotenv==1.2.3
 httpx==0.28.1
 
+# Figma job service (plugin polls this over HTTP -- see integrations/figma/)
+fastapi==0.141.1
+uvicorn==0.52.4
+
 # Slack
 slack_bolt==1.30.0
 slack_sdk==3.44.1
 
-# LLM agents (Figma generation is delegated to the `claude` CLI, not called
-# directly from Python -- see ai_agents/design_agent/figma_generator.py)
+# LLM agents
 openai-agents==0.22.2
 
 # RAG / vector store
@@ -20,7 +20,3 @@ langchain-openai==1.6.2
 langchain-qdrant==1.1.0
 langchain-text-splitters==1.1.2
 qdrant-client==1.19.0
-
-# Background jobs (api/routes/chat.py)
-redis==8.1.0
-rq==2.12.0

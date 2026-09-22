@@ -9,7 +9,7 @@ MAX_ATTEMPTS = 3
 RETRY_BACKOFF_SECONDS = 1.5
 
 
-async def _jira_request(method: str, path: str, payload: dict):
+async def _jira_request(method: str, path: str, payload: dict = None, params: dict = None):
 
     url = f"{settings.jira_base_url}{path}"
 
@@ -24,7 +24,7 @@ async def _jira_request(method: str, path: str, payload: dict):
 
         for attempt in range(1, MAX_ATTEMPTS + 1):
             try:
-                response = await client.request(method, url, json=payload)
+                response = await client.request(method, url, json=payload, params=params)
                 break
             except httpx.TransportError as error:
                 if attempt == MAX_ATTEMPTS:
@@ -67,3 +67,7 @@ async def jira_post(path: str, payload: dict):
 
 async def jira_put(path: str, payload: dict):
     return await _jira_request("PUT", path, payload)
+
+
+async def jira_get(path: str, params: dict = None):
+    return await _jira_request("GET", path, params=params)

@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     log_level:str="INFO"
     #LLM
     openai_API_Key:str=""
+    gemini_api_key:str=""
     #SLACK
     slack_bot_token:str=""
     slack_app_token:str=""
@@ -20,8 +21,16 @@ class Settings(BaseSettings):
     jira_email:str=""
     jira_api_token:str=""
     jira_project_key:str=""
-    #FIGMA (generation delegated to the `claude` CLI -- see figma_generator.py)
-    figma_team_plan_key:str=""
+    #JIRA ASSIGNEES (per-work-type default assignee accountId; see ai_agents/jira/assignee_resolver.py)
+    jira_assignee_design:str=""
+    jira_assignee_frontend:str=""
+    jira_assignee_backend:str=""
+    jira_assignee_integration:str=""
+    jira_assignee_qa:str=""
+    jira_assignee_devops:str=""
+    #FIGMA JOB SERVICE (plugin <-> FastAPI shared secret; see integrations/figma/)
+    figma_plugin_api_token:str=""
+    figma_job_service_port:int=8787
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

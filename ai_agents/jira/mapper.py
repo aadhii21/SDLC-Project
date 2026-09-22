@@ -1,3 +1,29 @@
+def adf_to_text(adf: dict) -> str:
+    """Best-effort plain-text extraction from Atlassian Document Format.
+
+    Walks every node looking for "text" content -- robust to descriptions
+    edited by hand in the Jira UI (more paragraphs/marks than text_to_adf
+    ever writes), not just what our own code produces.
+    """
+    if not adf:
+        return ""
+
+    parts = []
+
+    def _walk(node):
+        if isinstance(node, dict):
+            if node.get("type") == "text" and "text" in node:
+                parts.append(node["text"])
+            for child in node.get("content", []):
+                _walk(child)
+        elif isinstance(node, list):
+            for item in node:
+                _walk(item)
+
+    _walk(adf)
+    return "\n".join(parts)
+
+
 def text_to_adf(text: str) -> dict:
     return {
         "type": "doc",

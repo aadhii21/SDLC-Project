@@ -2,7 +2,7 @@ import asyncio
 
 from slack_bolt import App
 
-from graph.lang_graph import start_pipeline
+from graph.lang_graph import has_existing_run, start_pipeline
 
 
 def register_events(slack_app: App):
@@ -19,6 +19,17 @@ def register_events(slack_app: App):
         thread_ts = event.get("ts")
 
         print("USER QUERY:", user_query)
+
+        # Slack redelivers an event if this handler doesn't finish fast
+        # enough (e.g. the process restarts mid-run, as happened live).
+        # thread_ts is the original message's own ts, so a genuine redelivery
+        # of the SAME event always carries the SAME thread_ts -- if a run
+        # already exists for it, this is a duplicate delivery, not a new
+        # request. Starting a second run on top of it forks the checkpoint
+        # history and produces two racing, inconsistent executions.
+        if has_existing_run(thread_ts):
+            logger.info(f"Ignoring duplicate app_mention delivery for thread {thread_ts} -- run already exists.")
+            return
 
         try:
             say(
