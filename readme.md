@@ -139,10 +139,53 @@ flowchart TD
     X -.-> DB
     AA -.-> DB
     AE -.-> DB
+
+
+    %% ==========================================
+    %% COLOR DEFINITIONS
+    %% ==========================================
+
+    classDef trigger fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1;
+
+    classDef agent fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C;
+
+    classDef deterministic fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#0D47A1;
+
+    classDef decision fill:#FFF8E1,stroke:#F9A825,stroke-width:2px,color:#5D4037;
+
+    classDef human fill:#FFF3E0,stroke:#EF6C00,stroke-width:2px,color:#E65100;
+
+    classDef figma fill:#E0F7FA,stroke:#00838F,stroke-width:2px,color:#006064;
+
+    classDef persistence fill:#ECEFF1,stroke:#546E7A,stroke-width:2px,color:#263238;
+
+    classDef success fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20;
+
+    classDef error fill:#FFEBEE,stroke:#C62828,stroke-width:2px,color:#B71C1C;
+
+
+    %% ==========================================
+    %% APPLY COLORS
+    %% ==========================================
+
+    class A,B trigger;
+
+    class C,E,F,I,O,R,S,V,AB agent;
+
+    class H,J,P,Q,U,W,AC,AD,AG deterministic;
+
+    class D,G,L,T,Y,AF decision;
+
+    class K,M,N,X,Z,AA,AE human;
+
+    class FA,FB,FC,FD,FE figma;
+
+    class DB persistence;
+
+    class END1 success;
+
+    class ERR,END2 error;
 ```
-
-Two structurally separate things both happen to be called "LangGraph nodes" in this diagram: **agent nodes** call an LLM (via the OpenAI Agents SDK, pointed at Gemini) and return a structured Pydantic object; **deterministic nodes** run plain Python (Jira REST calls, Slack posts, the render-plan compiler) with no model call at all. The distinction matters for interviews: nothing about ticket creation, assignee resolution, or Figma node placement is "AI-decided" — only the *content* (PRD text, design content) is.
-
 ---
 
 ## 3. Workflow (step-by-step)
