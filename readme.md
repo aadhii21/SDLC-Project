@@ -22,62 +22,123 @@ This README documents what is **actually implemented** in this repository, verif
 
 ```mermaid
 flowchart TD
-    A["Slack app_mention event\n(Socket Mode / slack_bolt)"] --> B["start_pipeline()\nthread_id = Slack thread_ts"]
-    B --> C["research_node\nAGENT: scope guardrail + planner + search/synthesis agents"]
-    C -->|"rejected: off-topic / injection"| ERR["report_error_node"]
-    C --> D["prd_node\nAGENT: writes JiraPRD\n+ Qdrant self-learning context"]
-    D --> E["evaluate_prd_node\nAGENT: scores -> PRDEvaluation"]
-    E -->|"passed"| G["present_prd_node\nDETERMINISTIC: post to Slack"]
-    E -->|"failed, attempts < 1"| F["fix_prd_node\nAGENT: regenerate w/ evaluator feedback"]
-    F --> E
-    E -->|"failed, attempts >= 1"| F2["finalize_best_prd_node\nDETERMINISTIC: keep best-scoring attempt"]
-    F2 --> G
-    G --> H{{"await_prd_approval_node\ninterrupt() -- PAUSED, checkpointed"}}
-    H -->|"resume approved=true\n(Slack button)"| I["notify_creating_jira_node"]
-    H -->|"approved=false"| J["ask_prd_why_node"]
-    J --> K{{"await_prd_feedback_node\ninterrupt() -- waits for thread reply"}}
-    K -->|"resume text=..."| L["notify_reworking_prd_node"] --> M["regenerate_prd_node\nAGENT"] --> G
-    I --> N["jira_node\nDETERMINISTIC: Jira REST API\nepic + child tickets"]
-    N -->|"failure"| ERR
-    N --> O["design_node\nAGENT: writes DesignSpecification\n+ Qdrant RAG + self-learning"]
-    O --> P["evaluate_design_node\nAGENT: scores -> DesignEvaluation"]
-    P -->|"passed"| R["present_design_node\nDETERMINISTIC: post to Slack"]
-    P -->|"failed, attempts < 1"| Q["fix_design_node\nAGENT"]
-    Q --> P
-    P -->|"failed, attempts >= 1"| Q2["finalize_best_design_node"] --> R
-    R --> S{{"await_design_approval_node\ninterrupt() -- PAUSED, checkpointed"}}
-    S -->|"approved=false"| T["ask_design_why_node"] --> U{{"await_design_feedback_node\ninterrupt()"}}
-    U --> V["notify_reworking_design_node"] --> W["regenerate_design_node\nAGENT"] --> R
-    S -->|"approved=true"| X["notify_generating_figma_node"]
-    X --> Y["submit_figma_job_node\nDETERMINISTIC:\ncompile_design_to_render_plan()\n+ FigmaPublisher.publish()"]
-    Y -->|"submit failed"| ERR
-    Y --> Z{{"await_figma_job_node\ninterrupt() -- waits for plugin callback"}}
-    Z -->|"resume error=..."| ERR
-    Z -->|"resume result=..."| AA["post_back_node\nDETERMINISTIC: Jira comment + Slack message"]
-    AA --> END1(["END"])
-    ERR --> END2(["END"])
 
-    Y -. "HTTP POST /figma/jobs" .-> FJS
-    FJS -. "resume_pipeline(thread_id)" .-> Z
+    A["Slack Trigger<br/>app_mention event"]
+    B["start_pipeline()<br/>thread_id = Slack thread_ts"]
 
-    subgraph FIGMA["Figma subsystem (no LLM involved)"]
-        direction TB
-        FJS["FastAPI Figma Job Service"] --> Q3["in-memory job queue\npending -> processing -> completed/failed"]
-        Q3 --> Q4["Thin TypeScript plugin\nGET /figma/jobs/next (polling)"]
-        Q4 --> Q5["Figma Plugin API\ncreatePage / createFrame / createText / ..."]
-        Q5 --> Q6["Figma canvas"]
-        Q5 -->|"success"| Q7["POST /complete"] --> FJS
-        Q5 -->|"failure"| Q8["POST /fail"] --> FJS
+    A --> B
+
+    subgraph S1["1. Research"]
+        C["research_node<br/>AGENT: scope guardrail + planner + research"]
+        D{"Valid request?"}
+        C --> D
     end
 
-    subgraph PERSIST["Persistence"]
-        MG[("MongoDB\nMongoDBSaver checkpoints,\nkeyed by thread_id")]
+    B --> C
+
+    D -->|No| ERR["report_error_node<br/>Post error to Slack"]
+    D -->|Yes| E["prd_node<br/>AGENT: Generate JiraPRD<br/>Qdrant context"]
+
+    subgraph S2["2. PRD Generation and Evaluation"]
+        E --> F["evaluate_prd_node<br/>AGENT: Evaluate PRD"]
+        F --> G{"Evaluation passed?"}
+
+        G -->|Yes| H["present_prd_node<br/>Post PRD to Slack"]
+
+        G -->|Retry| I["fix_prd_node<br/>Regenerate using feedback"]
+        I --> F
+
+        G -->|Retries exhausted| J["finalize_best_prd_node<br/>Keep best PRD"]
+        J --> H
     end
-    H -.-> MG
-    K -.-> MG
-    S -.-> MG
-    U -.-> MG
-    Z -.-> MG
+
+    subgraph S3["3. PRD Human Approval"]
+        H --> K["await_prd_approval_node<br/>INTERRUPT: Workflow paused"]
+        K --> L{"PRD approved?"}
+
+        L -->|No| M["ask_prd_why_node<br/>Request feedback"]
+        M --> N["await_prd_feedback_node<br/>INTERRUPT: Wait for reply"]
+        N --> O["regenerate_prd_node<br/>AGENT: Regenerate PRD"]
+    end
+
+    O --> H
+
+    L -->|Yes| P["notify_creating_jira_node"]
+
+    subgraph S4["4. Jira Ticket Creation"]
+        P --> Q["jira_node<br/>DETERMINISTIC<br/>Create Epic and Child Tickets"]
+    end
+
+    Q -->|Failure| ERR
+    Q -->|Success| R["design_node<br/>AGENT: Generate DesignSpecification<br/>Qdrant RAG"]
+
+    subgraph S5["5. Design Generation and Evaluation"]
+        R --> S["evaluate_design_node<br/>AGENT: Evaluate Design"]
+        S --> T{"Evaluation passed?"}
+
+        T -->|Yes| U["present_design_node<br/>Post Design to Slack"]
+
+        T -->|Retry| V["fix_design_node<br/>Regenerate using feedback"]
+        V --> S
+
+        T -->|Retries exhausted| W["finalize_best_design_node<br/>Keep best Design"]
+        W --> U
+    end
+
+    subgraph S6["6. Design Human Approval"]
+        U --> X["await_design_approval_node<br/>INTERRUPT: Workflow paused"]
+        X --> Y{"Design approved?"}
+
+        Y -->|No| Z["ask_design_why_node<br/>Request feedback"]
+        Z --> AA["await_design_feedback_node<br/>INTERRUPT: Wait for reply"]
+        AA --> AB["regenerate_design_node<br/>AGENT: Regenerate Design"]
+    end
+
+    AB --> U
+
+    Y -->|Yes| AC["notify_generating_figma_node"]
+
+    subgraph S7["7. Figma Generation"]
+        AC --> AD["submit_figma_job_node<br/>Compile Render Plan<br/>Publish Figma Job"]
+
+        AD --> AE["await_figma_job_node<br/>INTERRUPT: Wait for plugin callback"]
+
+        AE --> AF{"Job result?"}
+
+        AF -->|Completed| AG["post_back_node<br/>Update Jira and Slack"]
+    end
+
+    AD -->|Submit failed| ERR
+    AF -->|Failed| ERR
+
+    AG --> END1["END"]
+    ERR --> END2["END"]
+
+    subgraph S8["Figma Subsystem - No LLM"]
+        FA["FastAPI Figma Job Service"]
+        FB["In-memory Job Queue"]
+        FC["TypeScript Figma Plugin"]
+        FD["Figma Plugin API"]
+        FE["Figma Canvas"]
+
+        FA --> FB
+        FB --> FC
+        FC --> FD
+        FD --> FE
+    end
+
+    AD -.-> FA
+    FA -.-> AE
+
+    subgraph S9["Persistence"]
+        DB["MongoDB<br/>LangGraph Checkpoints<br/>keyed by thread_id"]
+    end
+
+    K -.-> DB
+    N -.-> DB
+    X -.-> DB
+    AA -.-> DB
+    AE -.-> DB
 ```
 
 Two structurally separate things both happen to be called "LangGraph nodes" in this diagram: **agent nodes** call an LLM (via the OpenAI Agents SDK, pointed at Gemini) and return a structured Pydantic object; **deterministic nodes** run plain Python (Jira REST calls, Slack posts, the render-plan compiler) with no model call at all. The distinction matters for interviews: nothing about ticket creation, assignee resolution, or Figma node placement is "AI-decided" — only the *content* (PRD text, design content) is.
