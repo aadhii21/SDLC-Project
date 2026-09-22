@@ -19,7 +19,6 @@ This README documents what is **actually implemented** in this repository, verif
 ---
 
 ## 2. High-Level Architecture
-
 ```mermaid
 flowchart TD
 
@@ -44,7 +43,6 @@ flowchart TD
         F --> G{"Evaluation passed?"}
 
         G -->|Yes| H["present_prd_node<br/>Post PRD to Slack"]
-
         G -->|Retry| I["fix_prd_node<br/>Regenerate using feedback"]
         I --> F
 
@@ -62,7 +60,6 @@ flowchart TD
     end
 
     O --> H
-
     L -->|Yes| P["notify_creating_jira_node"]
 
     subgraph S4["4. Jira Ticket Creation"]
@@ -77,7 +74,6 @@ flowchart TD
         S --> T{"Evaluation passed?"}
 
         T -->|Yes| U["present_design_node<br/>Post Design to Slack"]
-
         T -->|Retry| V["fix_design_node<br/>Regenerate using feedback"]
         V --> S
 
@@ -95,16 +91,12 @@ flowchart TD
     end
 
     AB --> U
-
     Y -->|Yes| AC["notify_generating_figma_node"]
 
     subgraph S7["7. Figma Generation"]
         AC --> AD["submit_figma_job_node<br/>Compile Render Plan<br/>Publish Figma Job"]
-
         AD --> AE["await_figma_job_node<br/>INTERRUPT: Wait for plugin callback"]
-
         AE --> AF{"Job result?"}
-
         AF -->|Completed| AG["post_back_node<br/>Update Jira and Slack"]
     end
 
@@ -141,50 +133,40 @@ flowchart TD
     AE -.-> DB
 
 
-    %% ==========================================
-    %% COLOR DEFINITIONS
-    %% ==========================================
+    %% NODE COLORS
 
-    classDef trigger fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1;
+    classDef trigger fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1
+    classDef agent fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C
+    classDef deterministic fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#0D47A1
+    classDef decision fill:#FFF8E1,stroke:#F9A825,stroke-width:2px,color:#5D4037
+    classDef human fill:#FFF3E0,stroke:#EF6C00,stroke-width:2px,color:#E65100
+    classDef figma fill:#E0F7FA,stroke:#00838F,stroke-width:2px,color:#006064
+    classDef persistence fill:#ECEFF1,stroke:#546E7A,stroke-width:2px,color:#263238
+    classDef success fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20
+    classDef error fill:#FFEBEE,stroke:#C62828,stroke-width:2px,color:#B71C1C
 
-    classDef agent fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C;
-
-    classDef deterministic fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#0D47A1;
-
-    classDef decision fill:#FFF8E1,stroke:#F9A825,stroke-width:2px,color:#5D4037;
-
-    classDef human fill:#FFF3E0,stroke:#EF6C00,stroke-width:2px,color:#E65100;
-
-    classDef figma fill:#E0F7FA,stroke:#00838F,stroke-width:2px,color:#006064;
-
-    classDef persistence fill:#ECEFF1,stroke:#546E7A,stroke-width:2px,color:#263238;
-
-    classDef success fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20;
-
-    classDef error fill:#FFEBEE,stroke:#C62828,stroke-width:2px,color:#B71C1C;
+    class A,B trigger
+    class C,E,F,I,O,R,S,V,AB agent
+    class H,J,P,Q,U,W,AC,AD,AG deterministic
+    class D,G,L,T,Y,AF decision
+    class K,M,N,X,Z,AA,AE human
+    class FA,FB,FC,FD,FE figma
+    class DB persistence
+    class END1 success
+    class ERR,END2 error
 
 
-    %% ==========================================
-    %% APPLY COLORS
-    %% ==========================================
+    %% REMOVE GREY SUBGRAPH RECTANGLES
 
-    class A,B trigger;
-
-    class C,E,F,I,O,R,S,V,AB agent;
-
-    class H,J,P,Q,U,W,AC,AD,AG deterministic;
-
-    class D,G,L,T,Y,AF decision;
-
-    class K,M,N,X,Z,AA,AE human;
-
-    class FA,FB,FC,FD,FE figma;
-
-    class DB persistence;
-
-    class END1 success;
-
-    class ERR,END2 error;
+    style S1 fill:none,stroke:none
+    style S2 fill:none,stroke:none
+    style S3 fill:none,stroke:none
+    style S4 fill:none,stroke:none
+    style S5 fill:none,stroke:none
+    style S6 fill:none,stroke:none
+    style S7 fill:none,stroke:none
+    style S8 fill:none,stroke:none
+    style S9 fill:none,stroke:none
 ```
 ---
 
